@@ -237,7 +237,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     // Eating Now Variables, relocated for SR
     var ENactive = false, ENtimeOK = false, ENmaxIOBOK = false, enlog = "";
     //Create the time variable to be used to allow the EN to function only between certain hours
-    var now = new Date(), nowdec = round(now.getHours() + now.getMinutes() / 60, 2), nowhrs = now.getHours(), nowmins = now.getMinutes();
+    var now = new Date(), nowdec = round(now.getHours() + now.getMinutes() / 60, 2), nowhrs = now.getHours(), nowmins = now.getMinutes(), nowUTC = new Date(systemTime).getTime();
     // calculate the epoch time for EN start and end applying an offset when end time is lower than start time
     var ENStartOffset = (profile.EatingNowTimeEnd < profile.EatingNowTimeStart && nowhrs < profile.EatingNowTimeEnd ? 86400000 : 0), ENEndOffset = (profile.EatingNowTimeEnd < profile.EatingNowTimeStart && nowhrs > profile.EatingNowTimeStart ? 86400000 : 0);
     var ENStartTime = new Date().setHours(profile.EatingNowTimeStart, 0, 0, 0) - ENStartOffset, ENEndTime = new Date().setHours(profile.EatingNowTimeEnd, 0, 0, 0) + ENEndOffset;
@@ -251,9 +251,10 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     if (glucose_status.long_avgdelta != 0) DeltaPctL = round(1 + ((glucose_status.delta - glucose_status.long_avgdelta) / Math.abs(glucose_status.long_avgdelta)),2);
 
     // eating now time can be delayed if there is no first bolus or carbs
-    if (now >= ENStartTime && now < ENEndTime && (meal_data.lastNormalCarbTime >= ENStartTime || meal_data.lastENBolusTime >= ENStartTime || meal_data.firstENTempTargetTime >= ENStartTime)) ENtimeOK = true;
+//    if (now >= ENStartTime && now < ENEndTime && (meal_data.lastENCarbTime >= ENStartTime || meal_data.lastENBolusTime >= ENStartTime || meal_data.firstENTempTargetTime >= ENStartTime)) ENtimeOK = true;
+    if (now >= ENStartTime && now < ENEndTime && (meal_data.ENStartedTime >= ENStartTime)) ENtimeOK = true;
     if (now >= ENStartTime && now < ENEndTime && profile.ENautostart) ENtimeOK = true;
-    var lastNormalCarbAge = round((new Date(systemTime).getTime() - meal_data.lastNormalCarbTime) / 60000);
+    var lastNormalCarbAge = round((new Date(systemTime).getTime() - meal_data.lastENCarbTime) / 60000);
     // minutes since last bolus
     var lastBolusAge = (new Date(systemTime).getTime() - meal_data.lastBolusTime) / 60000;
 
@@ -262,7 +263,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     enlog += "ENStartOffset: " + ENStartOffset + ", ENEndOffset: " + ENEndOffset + "\n";
     enlog += "ENStartTime: " + new Date(ENStartTime).toLocaleString() + "\n";
     enlog += "ENEndTime: " + new Date(ENEndTime).toLocaleString() + "\n";
-    enlog += "lastNormalCarbTime: " + meal_data.lastNormalCarbTime + ", lastENBolusTime: " + meal_data.lastENBolusTime + "\n";
+//    enlog += "lastENCarbTime: " + meal_data.lastENCarbTime + ", lastENBolusTime: " + meal_data.lastENBolusTime + "\n";
     enlog += "lastNormalCarbAge: " + lastNormalCarbAge + "\n";
 
     /*
@@ -350,9 +351,6 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         if (!ENtimeOK && ENactive && !profile.allowENWovernight) ENactive = false;
     }
 
-    var ENTTActiveIOB = (ENTTActive ?  round(meal_data.activeENTempTargetStartIOB,2) : 0);
-    //var endebug = "ENTTActiveIOB:"+ENTTActiveIOB;
-
     //ENactive = false; //DEBUG
     enlog += "ENactive: " + ENactive + ", ENtimeOK: " + ENtimeOK + "\n";
     enlog += "ENmaxIOBOK: " + ENmaxIOBOK + ", max_iob: " + max_iob + "\n";
@@ -388,13 +386,13 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     */
 
     // cTime could be used for bolusing based on recent COB with Ghost COB
-    var ENTime = ((new Date(systemTime).getTime() - ENStartTime) / 60000); // elapsed time since EN Start
-    var c1Time = (typeof meal_data.firstCarbTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.firstCarbTime) / 60000) : 9999); // first carb entry after EN start
-    var cTime = ((new Date(systemTime).getTime() - meal_data.lastCarbTime) / 60000); // last carb entry after EN start
-    var b1Time = (typeof meal_data.firstENBolusTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.firstENBolusTime) / 60000) : 9999); // first normal bolus after EN start
-    var bTime = (typeof meal_data.lastENBolusTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.lastENBolusTime) / 60000) : 9999); // last normal bolus after EN start
-    var tt1Time = (typeof meal_data.firstENTempTargetTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.firstENTempTargetTime) / 60000) : 9999); // first EN TT after EN start
-    var ttTime = (typeof meal_data.activeENTempTargetStartTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.activeENTempTargetStartTime) / 60000) : 9999); // active EN TT
+//    var ENTime = ((new Date(systemTime).getTime() - ENStartTime) / 60000); // elapsed time since EN Start
+//    var c1Time = (typeof meal_data.firstENCarbTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.firstENCarbTime) / 60000) : 9999); // first carb entry after EN start
+//    var cTime = ((new Date(systemTime).getTime() - meal_data.lastCarbTime) / 60000); // last carb entry after EN start
+//    var b1Time = (typeof meal_data.firstENBolusTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.firstENBolusTime) / 60000) : 9999); // first normal bolus after EN start
+//    var bTime = (typeof meal_data.lastENBolusTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.lastENBolusTime) / 60000) : 9999); // last normal bolus after EN start
+//    var tt1Time = (typeof meal_data.firstENTempTargetTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.firstENTempTargetTime) / 60000) : 9999); // first EN TT after EN start
+//    var ttTime = (typeof meal_data.activeENTempTargetStartTime !== 'undefined' ? ((new Date(systemTime).getTime() - meal_data.activeENTempTargetStartTime) / 60000) : 9999); // active EN TT
 
     // ENWTriggerOK if there is enough IOB to trigger the EN window or we had a recent SMB
     //var ENWIOBThreshU = profile.current_basal * profile.ENWIOBTrigger/60, ENWTriggerOK = (ENactive && ENWIOBThreshU > 0 && iob_data.iob > ENWIOBThreshU);
@@ -402,28 +400,34 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
 
     // breakfast/first meal related vars
     // firstMealWindow is when either c1Time or b1Time is less than EN Window
-    var firstMealWindow = false;
-    // if breakfast window not set use ENW
-    var ENBkfstWindow = (profile.ENBkfstWindow == 0 ? profile.ENWindow : profile.ENBkfstWindow);
-    if (ENactive && c1Time < profile.ENBkfstWindow) { // first cob entry is active and within EN Window
-        firstMealWindow = true;
-        if (b1Time != 9999 && b1Time > ENBkfstWindow) firstMealWindow = false; // first bolus has also happened and is more than EN Window
-        if (tt1Time != 9999 && tt1Time > ENBkfstWindow) firstMealWindow = false; // first TT has also happened and is more than EN Window
-        ENWindowRunTime = c1Time;
-    } else if (ENactive && b1Time < ENBkfstWindow) { // first bolus entry is active and within EN Window
-        firstMealWindow = true;
-        if (c1Time != 9999 && c1Time > ENBkfstWindow) firstMealWindow = false; // first COB entry has also happened and is more than EN Window
-        if (tt1Time != 9999 && tt1Time > ENBkfstWindow) firstMealWindow = false; // first TT has also happened and is more than EN Window
-        ENWindowRunTime = b1Time;
-    } else if (ENactive && ENTTActive && tt1Time < ENBkfstWindow) { // first bolus entry is active and within EN Window
-        firstMealWindow = true;
-        if (b1Time != 9999 && b1Time > ENBkfstWindow) firstMealWindow = false; // first bolus has also happened and is more than EN Window
-        if (c1Time != 9999 && c1Time > ENBkfstWindow) firstMealWindow = false; // first COB entry has also happened and is more than EN Window
-        ENWindowRunTime = tt1Time;
-    }
+//    var firstMealWindow = false;
+
+    var ENBkfstWindow = (profile.ENBkfstWindow == 0 ? profile.ENWindow : profile.ENBkfstWindow); // if breakfast window not set use ENW
+    var firstMealWindowFinish = (meal_data.ENStartedTime + (ENBkfstWindow * 60000));
+    var firstMealWindow = nowUTC <= firstMealWindowFinish;
+
+//    if (ENactive && c1Time < profile.ENBkfstWindow) { // first cob entry is active and within EN Window
+//        firstMealWindow = true;
+//        if (b1Time != 9999 && b1Time > ENBkfstWindow) firstMealWindow = false; // first bolus has also happened and is more than EN Window
+//        if (tt1Time != 9999 && tt1Time > ENBkfstWindow) firstMealWindow = false; // first TT has also happened and is more than EN Window
+//        ENWindowRunTime = c1Time;
+//    } else if (ENactive && b1Time < ENBkfstWindow) { // first bolus entry is active and within EN Window
+//        firstMealWindow = true;
+//        if (c1Time != 9999 && c1Time > ENBkfstWindow) firstMealWindow = false; // first COB entry has also happened and is more than EN Window
+//        if (tt1Time != 9999 && tt1Time > ENBkfstWindow) firstMealWindow = false; // first TT has also happened and is more than EN Window
+//        ENWindowRunTime = b1Time;
+//    } else if (ENactive && ENTTActive && tt1Time < ENBkfstWindow) { // first bolus entry is active and within EN Window
+//        firstMealWindow = true;
+//        if (b1Time != 9999 && b1Time > ENBkfstWindow) firstMealWindow = false; // first bolus has also happened and is more than EN Window
+//        if (c1Time != 9999 && c1Time > ENBkfstWindow) firstMealWindow = false; // first COB entry has also happened and is more than EN Window
+//        ENWindowRunTime = tt1Time;
+//    }
+
 
     // set the ENW run and duration depending on meal type
-    ENWindowRunTime = (firstMealWindow ? ENWindowRunTime : Math.min(cTime, bTime, ttTime));
+    //ENWindowRunTime = (firstMealWindow ? ENWindowRunTime : Math.min(cTime, bTime, ttTime));
+    ENWindowRunTime = (nowUTC - meal_data.ENWStartTime) / 60000;
+
     var ENWindowDuration = (firstMealWindow ? ENBkfstWindow : profile.ENWindow);
     var ENWttDuration = (meal_data.activeENTempTargetDuration > 0 ? meal_data.activeENTempTargetDuration : ENWindowDuration);
     //ENWindowDuration = (!firstMealWindow && meal_data.activeENTempTargetDuration > ENWindowDuration - ENWindowRunTime ? meal_data.activeENTempTargetDuration : ENWindowDuration);
@@ -432,17 +436,20 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     // ENWindowOK is when there is a recent COB entry or manual bolus
     ENWindowOK = (ENactive && ENWindowRunTime < ENWindowDuration || ENWTriggerOK);
 
+    var ENW_max_tdd = (firstMealWindow ? profile.ENW_breakfast_max_tdd : profile.ENW_max_tdd);
+    ENW_max_tdd = (ENWindowOK && ENWindowRunTime <= ENWindowDuration ? ENW_max_tdd : 0); // reset to 0 if not within ENW
+
     // stronger CR and ISF can be used when firstmeal is within 2h window
     var firstMealScaling = (firstMealWindow && !profile.use_sens_TDD && profile.sens == profile.sens_midnight && profile.carb_ratio == profile.carb_ratio_midnight);
     var carb_ratio = (firstMealScaling ? round(profile.carb_ratio_midnight / (profile.BreakfastPct / 100), 1) : profile.carb_ratio);
     sens = (firstMealScaling ? round(profile.sens_midnight / (profile.BreakfastPct / 100), 1) : sens);
 
-    enlog += "ENTime: " + ENTime + "\n";
+//    enlog += "ENTime: " + ENTime + "\n";
     enlog += "------ ENWindow ------" + "\n";
     enlog += "ENWindowOK:" + ENWindowOK + ", ENWindowRunTime:" + ENWindowRunTime + ", ENWindowDuration:" + ENWindowDuration + "\n";
     enlog += "ENWIOBThreshU:" + ENWIOBThreshU + ", IOB:" + iob_data.iob + "\n";
-    enlog += "ENTTActive:" + ENTTActive + ", tt1Time:" + tt1Time + ", ttTime:" + ttTime + "\n";
-    enlog += "b1Time:" + b1Time + ", c1Time:" + c1Time + ", bTime:" + bTime + ", cTime:" + cTime + "\n";
+    enlog += "ENTTActive:" + ENTTActive + "\n";
+//    enlog += "b1Time:" + b1Time + ", c1Time:" + c1Time + ", bTime:" + bTime + ", cTime:" + cTime + "\n";
     enlog += "firstMealWindow:" + firstMealWindow + ", firstMealScaling:" + firstMealScaling + "\n";
     enlog += "-----------------------" + "\n";
 
@@ -1385,6 +1392,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     rT.reason += (ENWindowOK && ENWindowRunTime <= ENWindowDuration ? " " + round(ENWindowRunTime) + "/" + ENWindowDuration + "m" : "");
     rT.reason += (!ENWindowOK && !ENWTriggerOK && ENtimeOK ? " IOB&lt;" + round(ENWIOBThreshU, 2) : "");
     rT.reason += (ENWindowOK && ENWTriggerOK ? " IOB&gt;" + round(ENWIOBThreshU, 2) : "");
+    rT.reason += ", ENWTDD:" + round(meal_data.ENWTDD,2) + (ENW_max_tdd > 0 ? "/" + ENW_max_tdd : "");
 
     // other EN stuff
     rT.reason += ", eBGw: " + (sens_predType != "NA" ? sens_predType + " " : "") + convert_bg(insulinReq_bg, profile) + " " + round(eBGweight * 100) + "%";
@@ -1752,6 +1760,9 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
                 // IOB > EN max IOB fallback to AAPS maxBolus (default) or TBR
                 if (max_iob_en > 0 && iob_data.iob > max_iob_en) ENMaxSMB = (profile.EN_max_iob_allow_smb ? maxBolus : 0);
 
+                // restrict maxBolus when ENWTDD exceeded
+                if (ENW_max_tdd > 0 && meal_data.ENWTDD > ENW_max_tdd) ENMaxSMB = maxBolus;
+
                 // ============== TIME BASED RESTRICTIONS ==============
                 if (ENtimeOK) {
                     // increase maxbolus if we are within the hours specified
@@ -1835,6 +1846,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
             if (lastBolusAge > SMBInterval) {
                 if (microBolus > 0) {
                     rT.units = microBolus;
+                    rT.reason += (!ENactive || !ENtimeOK || maxBolus == maxBolusOrig ? "No EN SMB: " : "");
                     rT.reason += "Microbolusing " + microBolus + "/" + maxBolus + "U.";
                 }
             } else {
