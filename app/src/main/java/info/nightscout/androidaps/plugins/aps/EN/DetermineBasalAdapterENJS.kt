@@ -275,6 +275,7 @@ class DetermineBasalAdapterENJS internal constructor(private val scriptReader: S
         this.profile.put("EN_UAMPlus_PreBolus", sp.getDouble(R.string.key_eatingnow_uambgboost_maxbolus, 0.0))
         this.profile.put("EN_UAMPlus_NoENW", sp.getBoolean(R.string.key_use_uamplus_noenw, false))
         this.profile.put("EN_UAMPlus_maxBolus", sp.getDouble(R.string.key_eatingnow_uamplus_maxbolus, 0.0))
+        this.profile.put("EN_NoENW_maxBolus", sp.getDouble(R.string.key_eatingnow_noenw_maxbolus, 0.0))
         this.profile.put("EN_BGPlus_maxBolus", sp.getDouble(R.string.key_eatingnow_bgplus_maxbolus, 0.0))
 
         this.profile.put("SMBbgOffset", Profile.toMgdl(sp.getDouble(R.string.key_eatingnow_smbbgoffset, 0.0),profileFunction.getUnits()))
@@ -325,7 +326,9 @@ class DetermineBasalAdapterENJS internal constructor(private val scriptReader: S
         var ENStartedArray: Array<Long> = arrayOf() // Create array to contain first treatment times for ENStartTime for today
 
         // get the FIRST and LAST carb time since EN activation NEW
-        repository.getCarbsDataFromTime(ENStartTime,false).blockingGet().let { ENCarbs->
+        repository.getCarbsDataFromTimeToTimeExpanded(ENStartTime,now,false).blockingGet().let { ENCarbs->
+        // repository.getCarbsDataFromTime(ENStartTime,false).blockingGet().let { ENCarbs->
+
             val firstENCarbTime = with(ENCarbs.firstOrNull()?.timestamp) { this ?: 0 }
             this.mealData.put("firstENCarbTime",firstENCarbTime)
             if (firstENCarbTime >0) ENStartedArray += firstENCarbTime
@@ -353,7 +356,7 @@ class DetermineBasalAdapterENJS internal constructor(private val scriptReader: S
         }
 
         // get the FIRST and LAST ENTempTarget time since EN activation NEW
-        repository.getENTemporaryTargetDataFromTime(ENStartTime,true).blockingGet().let { ENTempTarget ->
+        repository.getENTemporaryTargetDataFromTimetoTime(ENStartTime,now,true).blockingGet().let { ENTempTarget ->
             val firstENTempTargetTime = with(ENTempTarget.firstOrNull()?.timestamp) { this ?: 0 }
             this.mealData.put("firstENTempTargetTime",firstENTempTargetTime)
             if (firstENTempTargetTime >0) ENStartedArray += firstENTempTargetTime
